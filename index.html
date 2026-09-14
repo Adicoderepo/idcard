@@ -107,19 +107,20 @@
 
  
              async function loadDataFromSupabase() {
-         
-          
+            // Selected photo ko hold karega
+            //let selectedPhotoFile = null;
         try {
-
+            // Supabase से 'idcardtabel' का पूरा डेटा मंगवाना
             const { data, error } = await supabase
                 .from("idcardtabel")
                 .select("*");
 
             if (error) throw error;
 
-           
+            // टेबल को पहले खाली करना ताकि पुराना या डुप्लिकेट डेटा न दिखे
             tableBody.innerHTML = "";
 
+            // अगर डेटा मौजूद है, तो उसे टेबल में जोड़ना
             if (data && data.length > 0) {
                 data.forEach((row, index) => {
                     const tr = document.createElement("tr");
@@ -141,12 +142,12 @@
         }
     }
 
-
+    // पेज लोड (Open) होते ही यह फंक्शन अपने आप चल जाएगा
     loadDataFromSupabase();
             document.getElementById("savetabel").addEventListener("click", savedatasupa);
             
             async function savedatasupa() { 
-            
+                // Photo upload karo
                         const photoUrl = await uploadPhotoToBucket();
                         const name = document.getElementById("cardName").value.trim();
                         const stclass = document.getElementById("cardClass").value.trim();
@@ -171,7 +172,7 @@
                                     
                         }); 
                 if (error) {
-                      
+                        /*console.error("Supabase Error:", error);*/
                         alert("❌ Data Save Nahi Hua! Error: " + error.message);
                     } 
                    else {
@@ -191,7 +192,7 @@
             let editingStudentIndex=-1;
 
 
-           
+            /* ================= PHOTO ================= */
 
                     fileInput.addEventListener("change", function () {
 
@@ -199,10 +200,10 @@
 
                 if (!file) return;
 
-               
+                // Upload ke liye file save
                 selectedPhotoFile = file;
 
-             
+                // Card me preview dikhana
                 const reader = new FileReader();
 
                 reader.onload = function (e) {
@@ -216,7 +217,7 @@
             });
 
 
-      
+        /* ================= BACKGROUND ================= */
 
         bgInput.addEventListener("change",function(){
             const file=this.files[0];
@@ -233,7 +234,7 @@
         });
 
 
-
+/* ================= PHOTO UP / DOWN ================= */
 
             let currentMargin=10;
 
@@ -250,6 +251,7 @@
                     }
 
 
+/* ================= SAVE / UPDATE TABLE ================= */
 
     function moveDataToTable(){
 
@@ -269,7 +271,7 @@
                     }
 
 
-               
+                    /* ================= UPDATE EXISTING ROW ================= */
 
                     if(editingStudentIndex!==-1){
 
@@ -299,7 +301,8 @@
                     }
 
 
-                
+                    /* ================= CREATE NEW ROW ================= */
+
                     const row=document.createElement("tr");
                     const srNo=tableBody.rows.length+1;
 
@@ -325,7 +328,7 @@
                 }
 
 
-
+/* ================= ROW CLICK ================= */
 
     function addRowClick(row){
 
@@ -341,6 +344,7 @@
                 }
 
 
+/* ================= LOAD DATA TO CARD ================= */
 
     function loadStudentToCard(index){
 
@@ -375,26 +379,27 @@
                     document.getElementById("cardName").focus();
                 }
 
-                let selectedPhotoFile = null; 
+                let selectedPhotoFile = null; // फोटो फाइल को होल्ड करने के लिए वेरिएबल
 
                 
                     async function uploadPhotoToBucket() {
                         let photoPublicUrl=null;
-                      
+                        // अगर यूजर ने कोई फोटो सिलेक्ट नहीं की है
                         if (!selectedPhotoFile) {
                             alert("⚠️ कृपया पहले कोई फोटो चुनें!");
                             return;
                         }
 
                         try {
-                          
+                            // छात्र का नाम इनपुट से निकालें (फाइल नाम को यूनिक बनाने के लिए)
                             const studentName = document.getElementById("cardName").value.trim() || "student";
                             const fileExtension = selectedPhotoFile.name.split('.').pop();
                             
-                       
+                            // एक यूनिक फाइल नाम बनाएं (जैसे: 171829384-ram.jpg) ताकि फोटो आपस में ओवरराइट न हों
                             const uniqueFileName = `${Date.now()}-${studentName.replace(/\s+/g, '_')}.${fileExtension}`;
 
-                       
+                            // 🔥 फोटो को Supabase बकेट में अपलोड करें
+                            // (नोट: अगर आपकी बकेट का नाम 'idcards' नहीं है, तो नीचे 'idcards' की जगह अपना असली बकेट नाम लिखें)
                             const { data, error } = await supabase
                                 .storage
                                 .from("idbucket") 
@@ -402,7 +407,7 @@
 
                             if (error) throw error;
 
-                         
+                            // 🔗 अपलोड होने के बाद फोटो का पब्लिक URL (लिंक) निकालना
                             const { data: urlData } = supabase
                                 .storage
                                 .from("idbucket")
@@ -414,7 +419,7 @@
                             alert("🎉 फोटो Supabase की बकेट में सफलतापुर्वक सेव हो गई!");
                             console.log("आपकी फोटो का पब्लिक लिंक यह है:", photoPublicUrl);
 
-                           
+                            // अपलोड होने के बाद वेरिएबल और बॉक्स को खाली करें
                             selectedPhotoFile = null;
                             document.getElementById("photocontainer").style.backgroundImage = "none";
 
@@ -428,7 +433,7 @@
 
 
 
-
+/* ================= NEXT STUDENT ================= */
 
      window.nextStudent=function nextStudent(){
 
@@ -461,6 +466,7 @@
                 }
 
 
+/* ================= CLEAR CARD ================= */
 
     function clearCard(){
 
@@ -478,6 +484,7 @@
                 }
 
 
+/* ================= EDIT HEADINGS ================= */
 
 window.changeCardHeadings=function changeCardHeadings(){
                     let newName=prompt(
@@ -545,10 +552,11 @@ window.changeCardHeadings=function changeCardHeadings(){
                         document.getElementById("thAddress").innerText=newAddress.replace(" :-","");
                     }
 }
- 
+ /* ================= 🔁 SUPABASE से डेटा लाकर टेबल में दिखाना ================= */
+   
 
 
-
+/* ================= PRINT TABLE ================= */
 
     window.printTablearea=function printTableArea(){
 
@@ -567,6 +575,9 @@ window.changeCardHeadings=function changeCardHeadings(){
                 }
 
 
+/* ================= SAVE AS JPG ================= */
+
+/* ================= बिना लाइव सर्वर के चलने वाला सेव फंक्शन ================= */
             window.downloadJPG=function downloadJPG(){
                     if(typeof html2canvas === "undefined"){
                         alert("❌ html2canvas library load नहीं हुई!");
@@ -578,12 +589,12 @@ window.changeCardHeadings=function changeCardHeadings(){
                         return;
                     }
 
-                  
+                    // F5 से सीधे चलाने के लिए useCORS और allowTaint को false किया गया है
                     html2canvas(cardContainer, {
                         scale: 3, 
-                        useCORS: false,     
-                        allowTaint: false,   
-                        backgroundColor: "#ffffff",
+                        useCORS: false,      // इसे false रखें
+                        allowTaint: false,    // इसे भी false रखें
+                        backgroundColor: "#ffffff", // सफेद बैकग्राउंड
                         logging:false
                     }).then(function(canvas){
                         const link = document.createElement('a');
