@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=50.0">
 <title>Simple ID Card Interface</title>
 <link rel="stylesheet" href="idcard.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
@@ -21,8 +23,8 @@
     <button type="button" class="margin-btn" onclick="movePhoto('down')">Photo Down ⬇️</button>
 
     <button type="button" class="edit-btn" onclick="changeCardHeadings()">Edit Headings 📝</button>
-    <button type="button" class="print-table-btn" onclick="printTableArea()">Print Table 🖨️</button>
-    <button type="button" class="save-table-btn" onclick="moveDataToTable()">Save Table 💾</button>
+    <button type="button" class="print-table-btn" onclick="printTablearea()">Print Table 🖨️</button>
+    <button type="button" id ="savetabel" class="save-table-btn">Save Table 💾</button>
     <button type="button" class="save-btn" onclick="downloadJPG()">Save as JPG 🖼️</button>
     <button type="button" id="nextBtn" onclick="nextStudent()">Next ➡️</button>
 </div>
@@ -97,373 +99,504 @@
 </div>
 
 <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const SUPABASE_URL = "https://wthjxebvovhwwnvhdavm.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0aGp4ZWJ2b3Zod3dudmhkYXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5ODU0NjIsImV4cCI6MjEwMzU2MTQ2Mn0.MabSdbcci02ZtpYQfJh3mZV8yhlxRiUWcth11iM4J6U";
 
-const fileInput=document.getElementById("fileInput");
-const bgInput=document.getElementById("bgInput");
-const photocontainer=document.getElementById("photocontainer");
-const cardContainer=document.getElementById("cardContainer");
-const tableBody=document.getElementById("tableBody");
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let currentStudentIndex=-1;
-let editingStudentIndex=-1;
+ 
+             async function loadDataFromSupabase() {
+         
+          
+        try {
 
+            const { data, error } = await supabase
+                .from("idcardtabel")
+                .select("*");
 
-/* ================= PHOTO ================= */
+            if (error) throw error;
 
-fileInput.addEventListener("change",function(){
-    const file=this.files[0];
+           
+            tableBody.innerHTML = "";
 
-    if(file){
-        const reader=new FileReader();
-
-        reader.onload=function(e){
-            photocontainer.style.backgroundImage=`url('${e.target.result}')`;
-        };
-
-        reader.readAsDataURL(file);
-    }
-});
-
-
-/* ================= BACKGROUND ================= */
-
-bgInput.addEventListener("change",function(){
-    const file=this.files[0];
-
-    if(file){
-        const reader=new FileReader();
-
-        reader.onload=function(e){
-            cardContainer.style.backgroundImage=`url('${e.target.result}')`;
-        };
-
-        reader.readAsDataURL(file);
-    }
-});
-
-
-/* ================= PHOTO UP / DOWN ================= */
-
-let currentMargin=10;
-
-function movePhoto(direction){
-
-    if(direction==="up"){
-        currentMargin-=5;
-    }
-    else if(direction==="down"){
-        currentMargin+=5;
-    }
-
-    photocontainer.style.marginTop=currentMargin+"px";
-}
-
-
-/* ================= SAVE / UPDATE TABLE ================= */
-
-function moveDataToTable(){
-
-    const nameValue=document.getElementById("cardName").value.trim();
-    const classValue=document.getElementById("cardClass").value.trim();
-    const fatherValue=document.getElementById("cardFather").value.trim();
-    const mobileValue=document.getElementById("cardMobile").value.trim();
-    const bloodValue=document.getElementById("cardBlood").value.trim();
-    const addressValue=document.getElementById("cardAddress").value.trim();
-    const extraAddressValue=document.getElementById("cardExtraAddress").value.trim();
-
-    const fullAddress=addressValue+(extraAddressValue?" "+extraAddressValue:"");
-
-    if(!nameValue&&!classValue&&!fatherValue&&!mobileValue&&!bloodValue&&!addressValue&&!extraAddressValue){
-        alert("❌ पहले Card में information भरें!");
-        return;
-    }
-
-
-    /* ================= UPDATE EXISTING ROW ================= */
-
-    if(editingStudentIndex!==-1){
-
-        const row=tableBody.rows[editingStudentIndex];
-
-        if(!row){
-            editingStudentIndex=-1;
-            return;
+            if (data && data.length > 0) {
+                data.forEach((row, index) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${row.Name || "-"}</td>
+                        <td>${row.Class || "-"}</td>
+                        <td>${row["Father Name"] || "-"}</td>
+                        <td>${row["Mobile No"] || "-"}</td>
+                        <td>${row["Blood Group"] || "-"}</td>
+                        <td>${row.Addresh || "-"}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+                console.log("✅ Supabase से सारा डेटा टेबल में लोड हो गया!");
+            }
+        } catch (err) {
+            console.error("❌ डेटा लोड करने में एरर:", err.message);
         }
-
-        row.cells[1].innerText=nameValue||"-";
-        row.cells[2].innerText=classValue||"-";
-        row.cells[3].innerText=fatherValue||"-";
-        row.cells[4].innerText=mobileValue||"-";
-        row.cells[5].innerText=bloodValue||"-";
-        row.cells[6].innerText=fullAddress||"-";
-
-        currentStudentIndex=editingStudentIndex;
-
-        editingStudentIndex=-1;
-
-        clearCard();
-
-        alert("✅ Student की information उसी row में update हो गई!");
-
-        return;
     }
 
 
-    /* ================= CREATE NEW ROW ================= */
+    loadDataFromSupabase();
+            document.getElementById("savetabel").addEventListener("click", savedatasupa);
+            
+            async function savedatasupa() { 
+            
+                        const photoUrl = await uploadPhotoToBucket();
+                        const name = document.getElementById("cardName").value.trim();
+                        const stclass = document.getElementById("cardClass").value.trim();
+                        const fatherName = document.getElementById("cardFather").value.trim();
+                        const mobileno = document.getElementById("cardMobile").value.trim();
+                        const bloodgroup = document.getElementById("cardBlood").value.trim();
+                        const addressValue=document.getElementById("cardAddress").value.trim();
+                        const extraAddressValue=document.getElementById("cardExtraAddress").value.trim();
+                        const fullAddress=addressValue+(extraAddressValue?" "+extraAddressValue:"");
 
-    const row=document.createElement("tr");
-    const srNo=tableBody.rows.length+1;
+                const { error } = await supabase
+                        .from("idcardtabel")
+                        .insert({
+                                    Name: name,
+                                    Class:stclass,
+                                    "Father Name":fatherName,
+                                    "Mobile No":mobileno,
+                                    "Blood Group":bloodgroup,
+                                    Addresh:fullAddress,
+                                    "photo url": photoUrl
+                                     
+                                    
+                        }); 
+                if (error) {
+                      
+                        alert("❌ Data Save Nahi Hua! Error: " + error.message);
+                    } 
+                   else {
+                            alert("✅ Data aur Nayi Photo Successfully Save Ho Gaya!");
+                            await loadDataFromSupabase();
+                            clearCard();
+                        }
+            }
 
-    row.innerHTML=`
-        <td class="sr-click">${srNo}</td>
-        <td>${nameValue||"-"}</td>
-        <td>${classValue||"-"}</td>
-        <td>${fatherValue||"-"}</td>
-        <td>${mobileValue||"-"}</td>
-        <td>${bloodValue||"-"}</td>
-        <td>${fullAddress||"-"}</td>
-    `;
+            const fileInput=document.getElementById("fileInput");
+            const bgInput=document.getElementById("bgInput");
+            const photocontainer=document.getElementById("photocontainer");
+            const cardContainer=document.getElementById("cardContainer");
+            const tableBody=document.getElementById("tableBody");
 
-    tableBody.appendChild(row);
+            let currentStudentIndex=-1;
+            let editingStudentIndex=-1;
 
-    addRowClick(row);
 
-    currentStudentIndex=tableBody.rows.length-1;
+           
 
-    clearCard();
+                    fileInput.addEventListener("change", function () {
 
-    alert("🎉 Data successfully table में save हो गया!");
+                const file = this.files[0];
+
+                if (!file) return;
+
+               
+                selectedPhotoFile = file;
+
+             
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    photocontainer.style.backgroundImage = `url('${e.target.result}')`;
+                    photocontainer.style.backgroundSize = "cover";
+                    photocontainer.style.backgroundPosition = "center";
+                };
+
+                reader.readAsDataURL(file);
+
+            });
+
+
+      
+
+        bgInput.addEventListener("change",function(){
+            const file=this.files[0];
+
+            if(file){
+                const reader=new FileReader();
+
+                reader.onload=function(e){
+                    cardContainer.style.backgroundImage=`url('${e.target.result}')`;
+                };
+
+                reader.readAsDataURL(file);
+            }
+        });
+
+
+
+
+            let currentMargin=10;
+
+             window.movePhoto=function movePhoto(direction){
+
+                        if(direction==="up"){
+                            currentMargin-=5;
+                        }
+                        else if(direction==="down"){
+                            currentMargin+=5;
+                        }
+
+                        photocontainer.style.marginTop=currentMargin+"px";
+                    }
+
+
+
+    function moveDataToTable(){
+
+                    const nameValue=document.getElementById("cardName").value.trim();
+                    const classValue=document.getElementById("cardClass").value.trim();
+                    const fatherValue=document.getElementById("cardFather").value.trim();
+                    const mobileValue=document.getElementById("cardMobile").value.trim();
+                    const bloodValue=document.getElementById("cardBlood").value.trim();
+                    const addressValue=document.getElementById("cardAddress").value.trim();
+                    const extraAddressValue=document.getElementById("cardExtraAddress").value.trim();
+
+                    const fullAddress=addressValue+(extraAddressValue?" "+extraAddressValue:"");
+
+                    if(!nameValue&&!classValue&&!fatherValue&&!mobileValue&&!bloodValue&&!addressValue&&!extraAddressValue){
+                        alert("❌ पहले Card में information भरें!");
+                        return;
+                    }
+
+
+               
+
+                    if(editingStudentIndex!==-1){
+
+                        const row=tableBody.rows[editingStudentIndex];
+
+                        if(!row){
+                            editingStudentIndex=-1;
+                            return;
+                        }
+
+                        row.cells[1].innerText=nameValue||"-";
+                        row.cells[2].innerText=classValue||"-";
+                        row.cells[3].innerText=fatherValue||"-";
+                        row.cells[4].innerText=mobileValue||"-";
+                        row.cells[5].innerText=bloodValue||"-";
+                        row.cells[6].innerText=fullAddress||"-";
+
+                        currentStudentIndex=editingStudentIndex;
+
+                        editingStudentIndex=-1;
+
+                        clearCard();
+
+                        alert("✅ Student की information उसी row में update हो गई!");
+
+                        return;
+                    }
+
+
+                
+                    const row=document.createElement("tr");
+                    const srNo=tableBody.rows.length+1;
+
+                    row.innerHTML=`
+                        <td class="sr-click">${srNo}</td>
+                        <td>${nameValue||"-"}</td>
+                        <td>${classValue||"-"}</td>
+                        <td>${fatherValue||"-"}</td>
+                        <td>${mobileValue||"-"}</td>
+                        <td>${bloodValue||"-"}</td>
+                        <td>${fullAddress||"-"}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+
+                    addRowClick(row);
+
+                    currentStudentIndex=tableBody.rows.length-1;
+
+                    clearCard();
+
+                    alert("🎉 Data successfully table में save हो गया!");
+                }
+
+
+
+
+    function addRowClick(row){
+
+                    row.querySelector(".sr-click").addEventListener("click",function(){
+
+                        currentStudentIndex=Array.from(tableBody.rows).indexOf(row);
+
+                        editingStudentIndex=currentStudentIndex;
+
+                        loadStudentToCard(currentStudentIndex);
+
+                    });
+                }
+
+
+
+    function loadStudentToCard(index){
+
+                    const rows=tableBody.rows;
+
+                    if(index<0||index>=rows.length){
+                        return;
+                    }
+
+                    const row=rows[index];
+
+                    document.getElementById("cardName").value=
+                        row.cells[1].innerText==="-"?"":row.cells[1].innerText;
+
+                    document.getElementById("cardClass").value=
+                        row.cells[2].innerText==="-"?"":row.cells[2].innerText;
+
+                    document.getElementById("cardFather").value=
+                        row.cells[3].innerText==="-"?"":row.cells[3].innerText;
+
+                    document.getElementById("cardMobile").value=
+                        row.cells[4].innerText==="-"?"":row.cells[4].innerText;
+
+                    document.getElementById("cardBlood").value=
+                        row.cells[5].innerText==="-"?"":row.cells[5].innerText;
+
+                    document.getElementById("cardAddress").value=
+                        row.cells[6].innerText==="-"?"":row.cells[6].innerText;
+
+                    document.getElementById("cardExtraAddress").value="";
+
+                    document.getElementById("cardName").focus();
+                }
+
+                let selectedPhotoFile = null; 
+
+                
+                    async function uploadPhotoToBucket() {
+                        let photoPublicUrl=null;
+                      
+                        if (!selectedPhotoFile) {
+                            alert("⚠️ कृपया पहले कोई फोटो चुनें!");
+                            return;
+                        }
+
+                        try {
+                          
+                            const studentName = document.getElementById("cardName").value.trim() || "student";
+                            const fileExtension = selectedPhotoFile.name.split('.').pop();
+                            
+                       
+                            const uniqueFileName = `${Date.now()}-${studentName.replace(/\s+/g, '_')}.${fileExtension}`;
+
+                       
+                            const { data, error } = await supabase
+                                .storage
+                                .from("idbucket") 
+                                .upload(uniqueFileName, selectedPhotoFile);
+
+                            if (error) throw error;
+
+                         
+                            const { data: urlData } = supabase
+                                .storage
+                                .from("idbucket")
+                                .getPublicUrl(uniqueFileName);
+
+                           photoPublicUrl = urlData.publicUrl;
+                            
+                            
+                            alert("🎉 फोटो Supabase की बकेट में सफलतापुर्वक सेव हो गई!");
+                            console.log("आपकी फोटो का पब्लिक लिंक यह है:", photoPublicUrl);
+
+                           
+                            selectedPhotoFile = null;
+                            document.getElementById("photocontainer").style.backgroundImage = "none";
+
+                        } catch (error) {
+                            console.error("Bucket Upload Error:", error);
+                            alert("❌ बकेट में फोटो सेव नहीं हुई! एरर: " + error.message);
+                        }
+                        return photoPublicUrl;
+                        
+                    }
+
+
+
+
+
+     window.nextStudent=function nextStudent(){
+
+                    const totalStudents=tableBody.rows.length;
+
+                    if(totalStudents===0){
+                        alert("❌ Table में अभी कोई student नहीं है!");
+                        return;
+                    }
+
+                    if(currentStudentIndex===-1){
+                        currentStudentIndex=0;
+                    }
+                    else{
+                        currentStudentIndex++;
+                    }
+
+                    if(currentStudentIndex>=totalStudents){
+
+                        currentStudentIndex=totalStudents-1;
+
+                        alert("ℹ️ यह आखिरी student है। अगला record उपलब्ध नहीं है!");
+
+                        return;
+                    }
+
+                    editingStudentIndex=currentStudentIndex;
+
+                    loadStudentToCard(currentStudentIndex);
+                }
+
+
+
+    function clearCard(){
+
+                    document.getElementById("cardName").value="";
+                    document.getElementById("cardClass").value="";
+                    document.getElementById("cardFather").value="";
+                    document.getElementById("cardMobile").value="";
+                    document.getElementById("cardBlood").value="";
+                    document.getElementById("cardAddress").value="";
+                    document.getElementById("cardExtraAddress").value="";
+                    currentStudentIndex=-1;
+                    editingStudentIndex=-1;
+
+                    document.getElementById("cardName").focus();
+                }
+
+
+
+window.changeCardHeadings=function changeCardHeadings(){
+                    let newName=prompt(
+                        "1. 'छात्र/छात्रा का नाम :-' की जगह क्या लिखना चाहते हैं?",
+                        document.getElementById("lblName").innerText
+                    );
+
+                    if(newName!==null){
+                        document.getElementById("lblName").innerText=newName;
+                        document.getElementById("thName").innerText=newName.replace(" :-","");
+                    }
+
+
+                    let newClass=prompt(
+                        "2. 'कक्षा :-' की जगह क्या लिखना चाहते हैं?",
+                        document.getElementById("lblClass").innerText
+                    );
+
+                    if(newClass!==null){
+                        document.getElementById("lblClass").innerText=newClass;
+                        document.getElementById("thClass").innerText=newClass.replace(" :-","");
+                    }
+
+
+                    let newFather=prompt(
+                        "3. 'पिता का नाम :-' की जगह क्या लिखना चाहते हैं?",
+                        document.getElementById("lblFather").innerText
+                    );
+
+                    if(newFather!==null){
+                        document.getElementById("lblFather").innerText=newFather;
+                        document.getElementById("thFather").innerText=newFather.replace(" :-","");
+                    }
+
+
+                    let newMobile=prompt(
+                        "4. 'मो० नं० :-' की जगह क्या लिखना चाहते हैं?",
+                        document.getElementById("lblMobile").innerText
+                    );
+
+                    if(newMobile!==null){
+                        document.getElementById("lblMobile").innerText=newMobile;
+                        document.getElementById("thMobile").innerText=newMobile.replace(" :-","");
+                    }
+
+
+                    let newBlood=prompt(
+                        "5. 'ब्लड ग्रुप :-' की जगह क्या लिखना चाहते हैं?",
+                        document.getElementById("lblBlood").innerText
+                    );
+
+                    if(newBlood!==null){
+                        document.getElementById("lblBlood").innerText=newBlood;
+                        document.getElementById("thBlood").innerText=newBlood.replace(" :-","");
+                    }
+
+
+                    let newAddress=prompt(
+                        "6. 'पता :-' की जगह क्या लिखना चाहते हैं?",
+                        document.getElementById("lblAddress").innerText
+                    );
+
+                    if(newAddress!==null){
+                        document.getElementById("lblAddress").innerText=newAddress;
+                        document.getElementById("thAddress").innerText=newAddress.replace(" :-","");
+                    }
 }
-
-
-/* ================= ROW CLICK ================= */
-
-function addRowClick(row){
-
-    row.querySelector(".sr-click").addEventListener("click",function(){
-
-        currentStudentIndex=Array.from(tableBody.rows).indexOf(row);
-
-        editingStudentIndex=currentStudentIndex;
-
-        loadStudentToCard(currentStudentIndex);
-
-    });
-}
-
-
-/* ================= LOAD DATA TO CARD ================= */
-
-function loadStudentToCard(index){
-
-    const rows=tableBody.rows;
-
-    if(index<0||index>=rows.length){
-        return;
-    }
-
-    const row=rows[index];
-
-    document.getElementById("cardName").value=
-        row.cells[1].innerText==="-"?"":row.cells[1].innerText;
-
-    document.getElementById("cardClass").value=
-        row.cells[2].innerText==="-"?"":row.cells[2].innerText;
-
-    document.getElementById("cardFather").value=
-        row.cells[3].innerText==="-"?"":row.cells[3].innerText;
-
-    document.getElementById("cardMobile").value=
-        row.cells[4].innerText==="-"?"":row.cells[4].innerText;
-
-    document.getElementById("cardBlood").value=
-        row.cells[5].innerText==="-"?"":row.cells[5].innerText;
-
-    document.getElementById("cardAddress").value=
-        row.cells[6].innerText==="-"?"":row.cells[6].innerText;
-
-    document.getElementById("cardExtraAddress").value="";
-
-    document.getElementById("cardName").focus();
-}
-
-
-/* ================= NEXT STUDENT ================= */
-
-function nextStudent(){
-
-    const totalStudents=tableBody.rows.length;
-
-    if(totalStudents===0){
-        alert("❌ Table में अभी कोई student नहीं है!");
-        return;
-    }
-
-    if(currentStudentIndex===-1){
-        currentStudentIndex=0;
-    }
-    else{
-        currentStudentIndex++;
-    }
-
-    if(currentStudentIndex>=totalStudents){
-
-        currentStudentIndex=totalStudents-1;
-
-        alert("ℹ️ यह आखिरी student है। अगला record उपलब्ध नहीं है!");
-
-        return;
-    }
-
-    editingStudentIndex=currentStudentIndex;
-
-    loadStudentToCard(currentStudentIndex);
-}
-
-
-/* ================= CLEAR CARD ================= */
-
-function clearCard(){
-
-    document.getElementById("cardName").value="";
-    document.getElementById("cardClass").value="";
-    document.getElementById("cardFather").value="";
-    document.getElementById("cardMobile").value="";
-    document.getElementById("cardBlood").value="";
-    document.getElementById("cardAddress").value="";
-    document.getElementById("cardExtraAddress").value="";
-
-    currentStudentIndex=-1;
-    editingStudentIndex=-1;
-
-    document.getElementById("cardName").focus();
-}
-
-
-/* ================= EDIT HEADINGS ================= */
-
-function changeCardHeadings(){
-
-    let newName=prompt(
-        "1. 'छात्र/छात्रा का नाम :-' की जगह क्या लिखना चाहते हैं?",
-        document.getElementById("lblName").innerText
-    );
-
-    if(newName!==null){
-        document.getElementById("lblName").innerText=newName;
-        document.getElementById("thName").innerText=newName.replace(" :-","");
-    }
-
-
-    let newClass=prompt(
-        "2. 'कक्षा :-' की जगह क्या लिखना चाहते हैं?",
-        document.getElementById("lblClass").innerText
-    );
-
-    if(newClass!==null){
-        document.getElementById("lblClass").innerText=newClass;
-        document.getElementById("thClass").innerText=newClass.replace(" :-","");
-    }
-
-
-    let newFather=prompt(
-        "3. 'पिता का नाम :-' की जगह क्या लिखना चाहते हैं?",
-        document.getElementById("lblFather").innerText
-    );
-
-    if(newFather!==null){
-        document.getElementById("lblFather").innerText=newFather;
-        document.getElementById("thFather").innerText=newFather.replace(" :-","");
-    }
-
-
-    let newMobile=prompt(
-        "4. 'मो० नं० :-' की जगह क्या लिखना चाहते हैं?",
-        document.getElementById("lblMobile").innerText
-    );
-
-    if(newMobile!==null){
-        document.getElementById("lblMobile").innerText=newMobile;
-        document.getElementById("thMobile").innerText=newMobile.replace(" :-","");
-    }
-
-
-    let newBlood=prompt(
-        "5. 'ब्लड ग्रुप :-' की जगह क्या लिखना चाहते हैं?",
-        document.getElementById("lblBlood").innerText
-    );
-
-    if(newBlood!==null){
-        document.getElementById("lblBlood").innerText=newBlood;
-        document.getElementById("thBlood").innerText=newBlood.replace(" :-","");
-    }
-
-
-    let newAddress=prompt(
-        "6. 'पता :-' की जगह क्या लिखना चाहते हैं?",
-        document.getElementById("lblAddress").innerText
-    );
-
-    if(newAddress!==null){
-        document.getElementById("lblAddress").innerText=newAddress;
-        document.getElementById("thAddress").innerText=newAddress.replace(" :-","");
-    }
-}
-
-
-/* ================= PRINT TABLE ================= */
-
-function printTableArea(){
-
-    if(tableBody.rows.length===0){
-        alert("❌ Table में कोई data नहीं है!");
-        return;
-    }
-
-    const tableHTML=document.querySelector(".table-container").outerHTML;
-    const printWindow=window.open("","_blank");
-
-    
-
-    printWindow.document.close();
-    printWindow.print();
-}
-
-
-/* ================= SAVE AS JPG ================= */
-
-/* ================= बिना लाइव सर्वर के चलने वाला फंक्शन ================= */
-/* ================= बिना लाइव सर्वर के चलने वाला सेव फंक्शन ================= */
-function downloadJPG(){
-    if(typeof html2canvas === "undefined"){
-        alert("❌ html2canvas library load नहीं हुई!");
-        return;
-    }
-
-    if(!cardContainer){
-        alert("❌ Card container नहीं मिला!");
-        return;
-    }
-
-    // F5 से सीधे चलाने के लिए useCORS और allowTaint को false किया गया है
-    html2canvas(cardContainer, {
-        scale: 4, 
-        useCORS: false,      // इसे false रखें
-        allowTaint: false,    // इसे भी false रखें
-        backgroundColor: null
-    }).then(function(canvas){
-        const link = document.createElement('a');
-        link.download = "student-id-card.jpg";
-        link.href = canvas.toDataURL("image/jpeg", 1.0);
-        link.click();
-    }).catch(function(error){
-        console.error("Error details:", error);
-        alert("❌ JPG save नहीं हो पाया।");
-    });
-}
-
+ 
+
+
+
+
+    window.printTablearea=function printTableArea(){
+
+                    if(tableBody.rows.length===0){
+                        alert("❌ Table में कोई data नहीं है!");
+                        return;
+                    }
+
+                    const tableHTML=document.querySelector(".table-container").outerHTML;
+                    const printWindow=window.open("","_blank");
+
+                    printWindow.document.write(tableHTML); 
+
+                    printWindow.document.close();
+                    printWindow.print();
+                }
+
+
+            window.downloadJPG=function downloadJPG(){
+                    if(typeof html2canvas === "undefined"){
+                        alert("❌ html2canvas library load नहीं हुई!");
+                        return;
+                    }
+
+                    if(!cardContainer){
+                        alert("❌ Card container नहीं मिला!");
+                        return;
+                    }
+
+                  
+                    html2canvas(cardContainer, {
+                        scale: 3, 
+                        useCORS: false,     
+                        allowTaint: false,   
+                        backgroundColor: "#ffffff",
+                        logging:false
+                    }).then(function(canvas){
+                        const link = document.createElement('a');
+                        link.download = "student-id-card.jpg";
+                        link.href = canvas.toDataURL("image/jpeg", 1.0);
+                        link.click();
+                    }).catch(function(error){
+                        console.error("Error details:", error);
+                        alert("❌ JPG save नहीं हो पाया।");
+                    });
+                }
+});
 
 </script>
-
 </body>
 </html>
