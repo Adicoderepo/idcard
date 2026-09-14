@@ -139,11 +139,10 @@
             }
         } catch (err) {
             console.error("❌ डेटा लोड करने में एरर:", err.message);
+            alert("❌ Table data load नहीं हुआ: " + err.message);
         }
     }
 
-    // पेज लोड (Open) होते ही यह फंक्शन अपने आप चल जाएगा
-    loadDataFromSupabase();
             document.getElementById("savetabel").addEventListener("click", savedatasupa);
             
             async function savedatasupa() { 
@@ -187,6 +186,9 @@
             const photocontainer=document.getElementById("photocontainer");
             const cardContainer=document.getElementById("cardContainer");
             const tableBody=document.getElementById("tableBody");
+
+            // DOM references तैयार होने के बाद ही Supabase data load करें
+            loadDataFromSupabase();
 
             let currentStudentIndex=-1;
             let editingStudentIndex=-1;
