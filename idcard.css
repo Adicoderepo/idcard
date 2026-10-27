@@ -262,7 +262,14 @@ body{
 }
 
 @media(max-width:600px){
-    .navbar{gap:5px}
+    .navbar{
+        position:relative;
+        flex-wrap:wrap;
+        justify-content:center;
+        gap:6px;
+        padding:10px 8px;
+        overflow:visible;
+    }
 
     .navbar button{
         font-size:10px;
@@ -272,9 +279,20 @@ body{
     .card{
         width:240px;
         height:380px;
-        top:110px;
+        top:auto;
     }
 
-    .workspace{padding-top:500px}
-}
+    .workspace{
+        padding-top:16px;
+        gap:16px;
+    }
 
+    .table-container{
+        width:calc(100% - 16px);
+    }
+
+    #nextBtn{
+        width:auto;
+        max-width:100%;
+    }
+}
