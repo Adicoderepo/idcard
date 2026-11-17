@@ -198,16 +198,35 @@ document.addEventListener("DOMContentLoaded", () => {
         photo.style.marginTop = `${currentMargin}px`;
     };
 
-    window.nextStudent = () => {
-        const rows = tableBody.rows;
-        if (!rows.length) return alert("Table में अभी कोई student नहीं है!");
-        currentStudentIndex = Math.min(currentStudentIndex + 1, rows.length - 1);
-        const row = rows[currentStudentIndex];
-        ["cardName", "cardClass", "cardFather", "cardMobile", "cardBlood", "cardAddress"].forEach((id, i) => {
-            document.getElementById(id).value = row.cells[i + 1].textContent === "-" ? "" : row.cells[i + 1].textContent;
-        });
-        document.getElementById("cardExtraAddress").value = "";
-    };
+    window.nextStudent=function nextStudent(){
+
+                    const totalStudents=tableBody.rows.length;
+
+                    if(totalStudents===0){
+                        alert("❌ Table में अभी कोई student नहीं है!");
+                        return;
+                    }
+
+                    if(currentStudentIndex===-1){
+                        currentStudentIndex=0;
+                    }
+                    else{
+                        currentStudentIndex++;
+                    }
+
+                    if(currentStudentIndex>=totalStudents){
+
+                        currentStudentIndex=totalStudents-1;
+
+                        alert("ℹ️ यह आखिरी student है। अगला record उपलब्ध नहीं है!");
+
+                        return;
+                    }
+
+                    editingStudentIndex=currentStudentIndex;
+
+                    loadStudentToCard(currentStudentIndex);
+                }
 
     window.changeCardHeadings = () => {
         [["lblName", "thName"], ["lblClass", "thClass"], ["lblFather", "thFather"], ["lblMobile", "thMobile"], ["lblBlood", "thBlood"], ["lblAddress", "thAddress"]].forEach(([labelId, headerId], index) => {
